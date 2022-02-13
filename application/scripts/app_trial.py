@@ -72,7 +72,7 @@ dropdown_sub_category = build_sub_category_dropdown_dict(categories, sub_categor
 '''
 
 # ------------------------------------------------------------------------------
-new_df_balances, new_df_transactions, dates, options1, options2, options3, options4 = database_preprocessing(
+new_df_balances, new_df_transactions, dates, options1, options2, options3, options4, options5 = database_preprocessing(
     db_filepath=db_filepath, balance_columns=balance_columns, transactions_columns=transactions_columns)
 options2.append({'label': 'TOTAL', 'value': 'Sum'})
 # ------------------------------------------------------------------------------
@@ -621,8 +621,9 @@ def selected_data_to_csv(nclicks, table1):
 ##TODO: add expenses all account since ever; expenses for just one account; if tbd=0.
 
 viewExpense_layout = html.Div([
-    html.H1('Categorize Transactions', style={'text-align': 'center'}),
+    html.H1('Visualize Transcations', style={'text-align': 'center'}),
     html.Br(),
+    html.H2('Monthly', style={'text-align': 'center'}),
     html.Div(children=[
         dcc.Dropdown(
             id='month_dropdown2',
@@ -630,34 +631,95 @@ viewExpense_layout = html.Div([
             value=options4[-1]['value'],
             multi=False,
             clearable=False,
-            style={'width': '50%', 'align-items': 'center', 'justify-content': 'center', 'display': 'inline-block',
+            style={'width': '60%', 'align-items': 'center', 'justify-content': 'center', 'display': 'inline-block',
                    'height': 30}
         ),
+        dcc.Dropdown(
+            id='Account_Dropdown',
+            options=options3,
+            value=options3[-1]['value'],
+            multi=False,
+            clearable=False,
+            style={'width': '40%', 'align-items': 'center', 'justify-content': 'center', 'display': 'inline-block',
+                   'height': 30}
+        ),
+    
     ]),
+    
     html.Div(children=[
-        dcc.Graph(id='Expense_sunburst', style={'width': '100%', 'height': 800, 'display': 'inline-block'}),
+        dcc.Graph(id='Expense_sunburst', style={'width': '50%', 'height': 800, 'display': 'inline-block'}),
+        dcc.Graph(id='Expense_sunburst_single_account', style={'width': '45%', 'height': 800, 'display': 'inline-block'}),
+    ]),
+
+    html.Hr(),
+    html.Br(),
+    html.H2('Annual', style={'text-align': 'center'}),
+    html.Div(children=[
+        dcc.Dropdown(
+            id='year_Dropdown',
+            options=options5,
+            value=options5[-1]['value'],
+            multi=False,
+            clearable=False,
+            style={'width': '60%', 'align-items': 'center', 'justify-content': 'center', 'display': 'inline-block',
+                   'height': 30}
+        ),
+        dcc.Dropdown(
+            id='Account_Dropdown_2',
+            options=options3,
+            value=options3[-1]['value'],
+            multi=False,
+            clearable=False,
+            style={'width': '40%', 'align-items': 'center', 'justify-content': 'center', 'display': 'inline-block',
+                   'height': 30}
+        ),
+    
+    ]),
+    
+    html.Div(children=[
+        dcc.Graph(id='Expense_sunburst_year', style={'width': '50%', 'height': 800, 'display': 'inline-block'}),
+        dcc.Graph(id='Expense_sunburst_single_account_year', style={'width': '45%', 'height': 800, 'display': 'inline-block'}),
     ]),
 ])
 
 
 @app.callback(
-    Output(component_id="Expense_sunburst", component_property="figure"),
-    [Input(component_id="month_dropdown2", component_property="value")],
+    [Output(component_id="Expense_sunburst", component_property="figure"),
+     Output(component_id="Expense_sunburst_single_account", component_property="figure")],
+    [Input(component_id="month_dropdown2", component_property="value"),
+     Input(component_id="Account_Dropdown", component_property="value")],
 )
-def update_sunburst(month):
+def update_sunburst_month(month, bank_account):
     df_updated = pd.read_csv(csv_filepath)
     df_updated = pd.DataFrame(OrderedDict(df_updated))
     dff = df_updated.copy()
     dff = dff[dff['booking_date'].str.contains(month)]
     dff = dff.sort_values(by='booking_date')
-    df = px.data.tips()
-    fig = px.sunburst(df, path=['day', 'time', 'sex'], values='total_bill')
     dff['transaction_amount'] = dff['transaction_amount'].abs()
     dff = dff[dff.status != 'pending']
-    #dff = dff[dff.bank != 'PAYPAL']
-    fig = px.sunburst(dff, path=['category', 'sub_category'], values='transaction_amount')
+    dff_single = dff[dff.bank == bank_account]
+    fig_tot = px.sunburst(dff, path=['category', 'sub_category'], values='transaction_amount')
+    fig_single = px.sunburst(dff_single, path=['category', 'sub_category'], values='transaction_amount') 
+    return fig_tot, fig_single
 
-    return fig
+@app.callback(
+    [Output(component_id="Expense_sunburst_year", component_property="figure"),
+     Output(component_id="Expense_sunburst_single_account_year", component_property="figure")],
+    [Input(component_id="year_Dropdown", component_property="value"),
+     Input(component_id="Account_Dropdown_2", component_property="value")],
+)
+def update_sunburst_years(year, bank_account_year):
+    df_updated = pd.read_csv(csv_filepath)
+    df_updated = pd.DataFrame(OrderedDict(df_updated))
+    dff = df_updated.copy()
+    dff = dff[dff['booking_date'].str.contains(year)]
+    dff = dff.sort_values(by='booking_date')
+    dff['transaction_amount'] = dff['transaction_amount'].abs()
+    dff = dff[dff.status != 'pending']
+    dff_single = dff[dff.bank == bank_account_year]
+    fig_tot_year = px.sunburst(dff, path=['category', 'sub_category'], values='transaction_amount')
+    fig_single_year = px.sunburst(dff_single, path=['category', 'sub_category'], values='transaction_amount') 
+    return fig_tot_year, fig_single_year
 
 
 # ------------------------------------------------------------------------------
