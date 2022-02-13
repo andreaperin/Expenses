@@ -18,14 +18,18 @@ def database_preprocessing(db_filepath, balance_columns, transactions_columns):
     unique_inst_id = list(new_df_balances['institution_id'].unique())
     unique_account_id = list(df_transactions['bank'].unique())
     months = []
+    years = []
     for i in df_transactions['booking_date']:
         months.append(i[:-3])
+        years.append(i[:-6])
     unique_months = set(months)
+    unique_years = set(years)
     unique_months = sorted(unique_months, key=lambda x: datetime.datetime.strptime(x, '%Y-%m'))
     options1 = []
     options2 = []
     options3 = []
     options4 = []
+    options5 = []
     for date in unique_dates:
         options1.append({'label': date, 'value': date})
     for inst_id in unique_inst_id:
@@ -34,8 +38,10 @@ def database_preprocessing(db_filepath, balance_columns, transactions_columns):
         options3.append({'label': account_id, 'value': account_id})
     for month in unique_months:
         options4.append({'label': month, 'value': month})
+    for year in unique_years:
+        options5.append({'label': year, 'value': year})
 
-    return new_df_balances, new_df_transactions, dates, options1, options2, options3, options4
+    return new_df_balances, new_df_transactions, dates, options1, options2, options3, options4, options5
 
 
 def create_transactions_csv(db_filepath, csv_filepath):
