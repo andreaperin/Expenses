@@ -44,7 +44,37 @@ Yes_No
 #####################
 ##  RetrivingData  ##
 #####################
-./main.sh
+
+Yes_No() {
+    # print question
+    echo -n "Do you want to retrieve latest data?: "
+
+    # read answer
+    read YnAnswer
+
+    # all to lower case
+    YnAnswer=$(echo $YnAnswer | awk '{print tolower($0)}')
+
+    # check and act on given answer
+    case $YnAnswer in
+    "yes") Start_dwnl ;;
+    "no") break ;;
+    *)
+        echo "Please answer yes or no"
+        Yes_No
+        ;;
+    esac
+}
+
+# function that is started when answer is yes
+Start_dwnl() {
+    ./main.sh
+    #more code here
+}
+
+# ask the yes/no question
+Yes_No
+
 echo 'Updating database in application'
 cp -r ../data/bank.db ../../application/data/
 echo 'Database correctly updated'
