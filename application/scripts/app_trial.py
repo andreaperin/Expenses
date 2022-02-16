@@ -697,6 +697,7 @@ def update_sunburst_month(month, bank_account):
     dff = dff.sort_values(by='booking_date')
     dff['transaction_amount'] = dff['transaction_amount'].abs()
     dff = dff[dff.status != 'pending']
+    dff = dff[dff.bank != 'PayPal']
     dff_single = dff[dff.bank == bank_account]
     fig_tot = px.sunburst(dff, path=['category', 'sub_category'], values='transaction_amount')
     fig_single = px.sunburst(dff_single, path=['category', 'sub_category'], values='transaction_amount') 
