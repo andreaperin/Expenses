@@ -1,6 +1,8 @@
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+from datetime import date
+
 
 import dash
 # import dash_core_components as dcc
@@ -22,7 +24,7 @@ from operator import itemgetter
 
 from datetime import datetime
 
-from layout import CONTENT_STYLE, nav_bar, COLORS, bank_color_map, iban_name_map
+from layout import CONTENT_STYLE, nav_bar, COLORS, bank_color_map, iban_name_map, categories_color_map
 import base64
 
 '''
@@ -622,7 +624,7 @@ def selected_data_to_csv(nclicks, table1):
 
 viewExpense_layout = html.Div([
     html.H1('Visualize Transcations', style={'text-align': 'center'}),
-    html.Br(),
+
     html.H2('Monthly', style={'text-align': 'center'}),
     html.Div(children=[
         dcc.Dropdown(
@@ -647,12 +649,10 @@ viewExpense_layout = html.Div([
     ]),
     
     html.Div(children=[
-        dcc.Graph(id='Expense_sunburst', style={'width': '50%', 'height': 800, 'display': 'inline-block'}),
-        dcc.Graph(id='Expense_sunburst_single_account', style={'width': '45%', 'height': 800, 'display': 'inline-block'}),
+        dcc.Graph(id='Expense_sunburst', style={'width': '50%', 'height': 400, 'display': 'inline-block'}),
+        dcc.Graph(id='Expense_sunburst_single_account', style={'width': '45%', 'height': 400, 'display': 'inline-block'}),
     ]),
 
-    html.Hr(),
-    html.Br(),
     html.H2('Annual', style={'text-align': 'center'}),
     html.Div(children=[
         dcc.Dropdown(
@@ -677,8 +677,8 @@ viewExpense_layout = html.Div([
     ]),
     
     html.Div(children=[
-        dcc.Graph(id='Expense_sunburst_year', style={'width': '50%', 'height': 800, 'display': 'inline-block'}),
-        dcc.Graph(id='Expense_sunburst_single_account_year', style={'width': '45%', 'height': 800, 'display': 'inline-block'}),
+        dcc.Graph(id='Expense_sunburst_year', style={'width': '50%', 'height': 400, 'display': 'inline-block'}),
+        dcc.Graph(id='Expense_sunburst_single_account_year', style={'width': '45%', 'height': 400, 'display': 'inline-block'}),
     ]),
 ])
 
@@ -699,8 +699,8 @@ def update_sunburst_month(month, bank_account):
     dff = dff[dff.status != 'pending']
     dff = dff[dff.bank != 'PayPal']
     dff_single = dff[dff.bank == bank_account]
-    fig_tot = px.sunburst(dff, path=['category', 'sub_category'], values='transaction_amount')
-    fig_single = px.sunburst(dff_single, path=['category', 'sub_category'], values='transaction_amount') 
+    fig_tot = px.sunburst(dff, path=['category', 'sub_category'], values='transaction_amount', color='category')
+    fig_single = px.sunburst(dff_single, path=['category', 'sub_category'], values='transaction_amount', color='category') 
     return fig_tot, fig_single
 
 @app.callback(
@@ -718,9 +718,54 @@ def update_sunburst_years(year, bank_account_year):
     dff['transaction_amount'] = dff['transaction_amount'].abs()
     dff = dff[dff.status != 'pending']
     dff_single = dff[dff.bank == bank_account_year]
-    fig_tot_year = px.sunburst(dff, path=['category', 'sub_category'], values='transaction_amount')
-    fig_single_year = px.sunburst(dff_single, path=['category', 'sub_category'], values='transaction_amount') 
+    fig_tot_year = px.sunburst(dff, path=['category', 'sub_category'], values='transaction_amount', color='category')
+    fig_single_year = px.sunburst(dff_single, path=['category', 'sub_category'], values='transaction_amount', color='category') 
+
     return fig_tot_year, fig_single_year
+
+
+# ------------------------------------------------------------------------------
+
+'''
+                                    Personalized View Page
+'''
+
+# ------------------------------------------------------------------------------
+personalizedView_layout = html.Div([
+    html.Div(children=[
+    dcc.DatePickerSingle(
+        id='starting-date',
+        min_date_allowed=date(2022, 1, 1),
+        max_date_allowed=date.today(),
+        initial_visible_month=date(2022, 1, 1),
+        date=date(2022, 1, 1),
+        style={'width': '20%', 'align-items': 'center', 'justify-content': 'center', 'display': 'inline-block',
+        'height': 30}
+        ),
+    dcc.DatePickerSingle(
+        id='ending-date',
+        min_date_allowed=date(2022, 1, 1),
+        max_date_allowed=date.today(),
+        initial_visible_month=date(2022, 1, 1),
+        date=date.today(),
+        style={'width': '20%', 'align-items': 'center', 'justify-content': 'center', 'display': 'inline-block',
+        'height': 30}
+        ),
+    dcc.Dropdown(
+        id='Account_Dropdown_jk',
+        options=options3,
+        value=options3[-1]['value'],
+        multi=False,
+        clearable=False,
+        style={'width': '40%', 'align-items': 'center', 'justify-content': 'center', 'display': 'inline-block',
+                'height': 30}
+        ),
+    ]),
+        html.Div(children=[
+        dcc.Graph(id='Expense_p', style={'width': '50%', 'height': 400, 'display': 'inline-block'}),
+    ]),
+])
+
 
 
 # ------------------------------------------------------------------------------
@@ -737,6 +782,9 @@ Crypto_layout = html.Div([
         options=[{'label': i, 'value': i} for i in ['Orange', 'Blue', 'Red']],
         value='Orange'
     ),
+    dcc.Link(
+    html.Button('Navigate to "page-2"'),
+    href='/Bank/transactions/viewExpense/personalized')
 ])
 
 
@@ -767,6 +815,8 @@ def display_page(pathname):
         return Categorize_page_layout
     elif pathname == '/Bank/transactions/viewExpense':
         return viewExpense_layout
+    elif pathname == '/Bank/transactions/viewExpense/personalized':
+        return personalizedView_layout
     else:
         return homePage_layout
 

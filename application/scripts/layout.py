@@ -15,6 +15,22 @@ iban_name_map = {'IT42G0200811402000103682825': 'Unicredit_Main',
                  'DE29100110012621889892': 'N26',
                  'None': 'TOTAL'}
 
+categories_color_map ={
+    'Income': 'Yellow',
+    'Miscellaneous': 'Red',
+    'Education': 'Black',
+    'Shopping': 'Blue', 
+    'Personal Care': 'Green', 
+    'Medical': 'LightGreen',
+    'Food & Drink': 'Violet', 
+    'Gifts & Donations': 'Brown', 
+    'Investments': 'White', 
+    'Bills & Utilities': 'Orange', 
+    'Auto & Transport': 'cadetBlue', 
+    'Travels': 'DarkSlateGrey',
+    'Taxes & Fine': 'SeaGreen'
+}
+
 NAVBAR_STYLE = {
     "position": "fixed",
     "top": 0,
