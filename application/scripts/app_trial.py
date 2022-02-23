@@ -620,7 +620,7 @@ def selected_data_to_csv(nclicks, table1):
 
 # ------------------------------------------------------------------------------
 
-##TODO: add expenses all account since ever; expenses for just one account; if tbd=0.
+##TODO: month avg per category.
 
 viewExpense_layout = html.Div([
     html.H1('Visualize Transcations', style={'text-align': 'center'}),
@@ -680,6 +680,9 @@ viewExpense_layout = html.Div([
         dcc.Graph(id='Expense_sunburst_year', style={'width': '50%', 'height': 400, 'display': 'inline-block'}),
         dcc.Graph(id='Expense_sunburst_single_account_year', style={'width': '45%', 'height': 400, 'display': 'inline-block'}),
     ]),
+    dcc.Link(
+    html.Button('Customize View'),
+    href='/Bank/transactions/viewExpense/personalized')
 ])
 
 
@@ -731,40 +734,63 @@ def update_sunburst_years(year, bank_account_year):
 '''
 
 # ------------------------------------------------------------------------------
+
+#TODO: Aggiungere legenda
+
+options6=options3
+options6.append({'label': 'TOTAL', 'value': 'Sum'})
 personalizedView_layout = html.Div([
     html.Div(children=[
-    dcc.DatePickerSingle(
-        id='starting-date',
-        min_date_allowed=date(2022, 1, 1),
-        max_date_allowed=date.today(),
-        initial_visible_month=date(2022, 1, 1),
-        date=date(2022, 1, 1),
-        style={'width': '20%', 'align-items': 'center', 'justify-content': 'center', 'display': 'inline-block',
-        'height': 30}
+        dcc.DatePickerRange(
+            id='my-date-picker-range',
+            display_format='DD/MM/YYYY',
+            min_date_allowed=date(2022, 1, 1),
+            max_date_allowed=date.today(),
+            initial_visible_month=date(2022, 1, 1),
+            start_date=date(2022, 2, 1),
+            end_date=date.today(),
+            style={'width': '40%', 'align-items': 'center', 'justify-content': 'center', 'display': 'inline-block',
+                   'height': 30}
         ),
-    dcc.DatePickerSingle(
-        id='ending-date',
-        min_date_allowed=date(2022, 1, 1),
-        max_date_allowed=date.today(),
-        initial_visible_month=date(2022, 1, 1),
-        date=date.today(),
-        style={'width': '20%', 'align-items': 'center', 'justify-content': 'center', 'display': 'inline-block',
-        'height': 30}
-        ),
-    dcc.Dropdown(
-        id='Account_Dropdown_jk',
-        options=options3,
-        value=options3[-1]['value'],
-        multi=False,
-        clearable=False,
-        style={'width': '40%', 'align-items': 'center', 'justify-content': 'center', 'display': 'inline-block',
-                'height': 30}
-        ),
+        dcc.Dropdown(
+            id='Account_Dropdown_3',
+            options=options6,
+            value=options6[-1]['value'],
+            multi=False,
+            clearable=False,
+            style={'width': '40%', 'align-items': 'center', 'justify-content': 'center', 'display': 'inline-block',
+                   'height': 50}
+        ),        
     ]),
-        html.Div(children=[
-        dcc.Graph(id='Expense_p', style={'width': '50%', 'height': 400, 'display': 'inline-block'}),
-    ]),
+    html.Br(),
+    html.Div(
+        dcc.Graph(id='Expenses', style={'width': '100%', 'height': 800, 'display': 'inline-block'})    
+    )
 ])
+
+@app.callback(
+    Output('Expenses', 'figure'),
+    Input('my-date-picker-range', 'start_date'),
+    Input('my-date-picker-range', 'end_date'),
+    Input('Account_Dropdown_3', 'value'))
+def update_output(start_date, end_date, bank):
+    df_updated = pd.read_csv(csv_filepath)
+    df_updated = pd.DataFrame(OrderedDict(df_updated))
+    dff = df_updated.copy()
+    dff = dff.sort_values(by='booking_date')
+    dff_datetime=dff
+    dff_datetime['booking_date']=pd.to_datetime(dff['booking_date'])
+    mask=(dff_datetime['booking_date']>start_date) & (dff_datetime['booking_date']<end_date)
+    dff_datetime = dff_datetime.loc[mask]
+    dff_datetime['transaction_amount'] = dff_datetime['transaction_amount'].abs()
+    dff_datetime = dff_datetime[dff_datetime.status != 'pending']
+    if bank == 'Sum':
+        dff_datetime = dff_datetime[dff_datetime.bank != 'PAYPAL']
+    else:
+        dff_datetime = dff_datetime[dff_datetime.bank == bank]
+    fig_tot_year = px.sunburst(dff_datetime, path=['category', 'sub_category'], values='transaction_amount', color='category')
+    
+    return fig_tot_year
 
 
 
@@ -782,9 +808,7 @@ Crypto_layout = html.Div([
         options=[{'label': i, 'value': i} for i in ['Orange', 'Blue', 'Red']],
         value='Orange'
     ),
-    dcc.Link(
-    html.Button('Navigate to "page-2"'),
-    href='/Bank/transactions/viewExpense/personalized')
+
 ])
 
 
