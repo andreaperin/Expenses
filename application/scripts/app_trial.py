@@ -47,8 +47,9 @@ iban_dict = [
 image_filename = '../imgs/homepage.jpg'
 categories = ['Income', 'Miscellaneous', 'Education', 'Shopping', 'Personal Care', 'Medical',
               'Food & Drink', 'Gifts & Donations', 'Investments', 'Bills & Utilities', 'Auto & Transport', 'Travels',
-              'Taxes & Fine']
+              'Taxes & Fine', 'Internal Transfer']
 sub_categories = {
+    'Internal Transfer' : ['N26-Unicredit', 'N26-Paypal', 'Unicredit-Paypal', 'Unicredit-Genius'],
     'Income': ['Paycheck', 'Bonus', 'ReturnedInvestments', 'Reinbursment', 'Mum&Dad', 'Gifts'],
     'Miscellaneous': ['Cash & ATM', 'Check'],
     'Education': ['Courses', 'Hardware', 'Software'],
@@ -626,6 +627,21 @@ viewExpense_layout = html.Div([
     html.H1('Visualize Transcations', style={'text-align': 'center'}),
 
     html.H2('Monthly', style={'text-align': 'center'}),
+        html.Div(children=[
+        dcc.Dropdown(
+            id='income_outcome1',
+            options=[       
+                {'label': 'Both', 'value': 'Both'},
+                {'label': 'Income', 'value': 'Income'},
+                {'label': 'Outcome', 'value': 'Outcome'},
+                ],
+            value='Both',
+            multi=False,
+            clearable=False,
+            style={'width': '60%', 'align-items': 'center', 'justify-content': 'center', 'display': 'inline-block',
+                   'height': 30}
+        )
+    ]),
     html.Div(children=[
         dcc.Dropdown(
             id='month_dropdown2',
@@ -639,7 +655,7 @@ viewExpense_layout = html.Div([
         dcc.Dropdown(
             id='Account_Dropdown',
             options=options3,
-            value=options3[-1]['value'],
+            value=options3[-3]['value'],
             multi=False,
             clearable=False,
             style={'width': '40%', 'align-items': 'center', 'justify-content': 'center', 'display': 'inline-block',
@@ -656,9 +672,24 @@ viewExpense_layout = html.Div([
     html.H2('Annual', style={'text-align': 'center'}),
     html.Div(children=[
         dcc.Dropdown(
+            id='income_outcome2',
+            options=[       
+                {'label': 'Both', 'value': 'Both'},
+                {'label': 'Income', 'value': 'Income'},
+                {'label': 'Outcome', 'value': 'Outcome'},
+                ],
+            value='Both',
+            multi=False,
+            clearable=False,
+            style={'width': '60%', 'align-items': 'center', 'justify-content': 'center', 'display': 'inline-block',
+                   'height': 30}
+        )
+    ]),
+    html.Div(children=[
+        dcc.Dropdown(
             id='year_Dropdown',
             options=options5,
-            value=options5[-1]['value'],
+            value=options5[-2]['value'],
             multi=False,
             clearable=False,
             style={'width': '60%', 'align-items': 'center', 'justify-content': 'center', 'display': 'inline-block',
@@ -667,7 +698,7 @@ viewExpense_layout = html.Div([
         dcc.Dropdown(
             id='Account_Dropdown_2',
             options=options3,
-            value=options3[-1]['value'],
+            value=options3[-3]['value'],
             multi=False,
             clearable=False,
             style={'width': '40%', 'align-items': 'center', 'justify-content': 'center', 'display': 'inline-block',
@@ -690,17 +721,27 @@ viewExpense_layout = html.Div([
     [Output(component_id="Expense_sunburst", component_property="figure"),
      Output(component_id="Expense_sunburst_single_account", component_property="figure")],
     [Input(component_id="month_dropdown2", component_property="value"),
-     Input(component_id="Account_Dropdown", component_property="value")],
+     Input(component_id="Account_Dropdown", component_property="value"),
+     Input(component_id="income_outcome1", component_property="value")],
 )
-def update_sunburst_month(month, bank_account):
+def update_sunburst_month(month, bank_account, inc_out):
     df_updated = pd.read_csv(csv_filepath)
     df_updated = pd.DataFrame(OrderedDict(df_updated))
     dff = df_updated.copy()
     dff = dff[dff['booking_date'].str.contains(month)]
     dff = dff.sort_values(by='booking_date')
-    dff['transaction_amount'] = dff['transaction_amount'].abs()
+    ##TO modify here fot take into account Income, Outcome and Both option menu
+    if inc_out == 'Both':
+        dff['transaction_amount'] = dff['transaction_amount'].abs()
+    elif inc_out == 'Income':
+        dff = dff[dff.transaction_amount >= 0]
+    elif inc_out == 'Outcome':
+        dff = dff[dff.transaction_amount <= 0]
+        dff['transaction_amount'] = dff['transaction_amount'].abs()
+
     dff = dff[dff.status != 'pending']
     dff = dff[dff.bank != 'PayPal']
+    dff = dff[dff.category != 'Internal Transfer']
     dff_single = dff[dff.bank == bank_account]
     fig_tot = px.sunburst(dff, path=['category', 'sub_category'], values='transaction_amount', color='category')
     fig_single = px.sunburst(dff_single, path=['category', 'sub_category'], values='transaction_amount', color='category') 
@@ -710,15 +751,23 @@ def update_sunburst_month(month, bank_account):
     [Output(component_id="Expense_sunburst_year", component_property="figure"),
      Output(component_id="Expense_sunburst_single_account_year", component_property="figure")],
     [Input(component_id="year_Dropdown", component_property="value"),
-     Input(component_id="Account_Dropdown_2", component_property="value")],
+     Input(component_id="Account_Dropdown_2", component_property="value"),
+     Input(component_id="income_outcome2", component_property="value")],
 )
-def update_sunburst_years(year, bank_account_year):
+def update_sunburst_years(year, bank_account_year, inc_out):
     df_updated = pd.read_csv(csv_filepath)
     df_updated = pd.DataFrame(OrderedDict(df_updated))
     dff = df_updated.copy()
     dff = dff[dff['booking_date'].str.contains(year)]
     dff = dff.sort_values(by='booking_date')
-    dff['transaction_amount'] = dff['transaction_amount'].abs()
+    if inc_out == 'Both':
+        dff['transaction_amount'] = dff['transaction_amount'].abs()
+    elif inc_out == 'Income':
+        dff = dff[dff.transaction_amount >= 0]
+    elif inc_out == 'Outcome':
+        dff = dff[dff.transaction_amount <= 0]
+        dff['transaction_amount'] = dff['transaction_amount'].abs()    
+
     dff = dff[dff.status != 'pending']
     dff_single = dff[dff.bank == bank_account_year]
     fig_tot_year = px.sunburst(dff, path=['category', 'sub_category'], values='transaction_amount', color='category')
@@ -749,7 +798,7 @@ personalizedView_layout = html.Div([
             initial_visible_month=date(2022, 1, 1),
             start_date=date(2022, 2, 1),
             end_date=date.today(),
-            style={'width': '40%', 'align-items': 'center', 'justify-content': 'center', 'display': 'inline-block',
+            style={'width': '30%', 'align-items': 'center', 'justify-content': 'center', 'display': 'inline-block',
                    'height': 30}
         ),
         dcc.Dropdown(
@@ -758,9 +807,22 @@ personalizedView_layout = html.Div([
             value=options6[-1]['value'],
             multi=False,
             clearable=False,
+            style={'width': '30%', 'align-items': 'center', 'justify-content': 'center', 'display': 'inline-block',
+                   'height': 30}
+        ),
+        dcc.Dropdown(
+            id='income_outcome3',
+            options=[       
+                {'label': 'Both', 'value': 'Both'},
+                {'label': 'Income', 'value': 'Income'},
+                {'label': 'Outcome', 'value': 'Outcome'},
+                ],
+            value='Both',
+            multi=False,
+            clearable=False,
             style={'width': '40%', 'align-items': 'center', 'justify-content': 'center', 'display': 'inline-block',
-                   'height': 50}
-        ),        
+                   'height': 30}
+        )
     ]),
     html.Br(),
     html.Div(
@@ -772,17 +834,26 @@ personalizedView_layout = html.Div([
     Output('Expenses', 'figure'),
     Input('my-date-picker-range', 'start_date'),
     Input('my-date-picker-range', 'end_date'),
-    Input('Account_Dropdown_3', 'value'))
-def update_output(start_date, end_date, bank):
+    Input('Account_Dropdown_3', 'value'),
+    Input('income_outcome3', 'value')
+    )
+def update_output(start_date, end_date, bank, inc_out):
     df_updated = pd.read_csv(csv_filepath)
     df_updated = pd.DataFrame(OrderedDict(df_updated))
     dff = df_updated.copy()
     dff = dff.sort_values(by='booking_date')
+    dff = dff[dff.category != 'Internal Transfer']
     dff_datetime=dff
     dff_datetime['booking_date']=pd.to_datetime(dff['booking_date'])
     mask=(dff_datetime['booking_date']>start_date) & (dff_datetime['booking_date']<end_date)
     dff_datetime = dff_datetime.loc[mask]
-    dff_datetime['transaction_amount'] = dff_datetime['transaction_amount'].abs()
+    if inc_out == 'Both':
+        dff_datetime['transaction_amount'] = dff_datetime['transaction_amount'].abs()
+    elif inc_out == 'Income':
+        dff_datetime = dff_datetime[dff_datetime.transaction_amount >= 0]
+    elif inc_out == 'Outcome':
+        dff_datetime = dff_datetime[dff_datetime.transaction_amount <= 0]
+        dff_datetime['transaction_amount'] = dff_datetime['transaction_amount'].abs()   
     dff_datetime = dff_datetime[dff_datetime.status != 'pending']
     if bank == 'Sum':
         dff_datetime = dff_datetime[dff_datetime.bank != 'PAYPAL']

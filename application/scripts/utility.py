@@ -161,6 +161,16 @@ def build_sub_category_dropdown_dict(categories, sub_categories):
             for i in sub_categories['Taxes & Fine']
         ],
         'clearable': True,
+    }, {
+        'if': {
+            'column_id': 'sub_category',
+            'filter_query': '{category} eq "Internal Transfer"'
+        },
+        'options': [
+            {'label': i, 'value': i}
+            for i in sub_categories['Internal Transfer']
+        ],
+        'clearable': True,
     }]
     return dropdown_sub_category
 
