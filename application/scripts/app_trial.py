@@ -557,7 +557,7 @@ Categorize_page_layout = html.Div([
                 'backgroundColor': 'silver'
             }
         ],
-        row_deletable=True
+        row_deletable=True,
     ),
     dcc.Interval(id='interval', interval=50000, n_intervals=0),
     html.Br(),
@@ -589,25 +589,32 @@ def display_table(month, bank):
 
 @app.callback(
     Output(component_id="output-1", component_property="children"),
-    [Input(component_id="save-button", component_property="n_clicks")],
+    [Input(component_id="save-button", component_property="n_clicks"),
+     Input(component_id="month_dropdown", component_property="value"),
+     Input(component_id="bank_dropdown_cat", component_property="value")],
     [State(component_id='table-dropdown', component_property="data")]
 )
-def selected_data_to_csv(nclicks, table1):
+def selected_data_to_csv(nclicks, month, bank, table1):
     if nclicks == 0:
         raise PreventUpdate
     else:
         list_new = []
         list_old = []
         df_old = pd.read_csv(csv_filepath)
-        for c, d in df_old.iterrows():
+        dff = df_old.copy()
+        dff = dff[dff['booking_date'].str.contains(month)]
+        data = dff[dff['bank'].str.contains(bank)]
+        for c, d in data.iterrows():
             list_old.append(d.transaction_id)
         for a, b in pd.DataFrame(table1).iterrows():
             list_new.append(b.transaction_id)
             df_old.loc[df.transaction_id == b['transaction_id'], 'category'] = b['category']
             df_old.loc[df.transaction_id == b['transaction_id'], 'sub_category'] = b['sub_category']
-        # to_be_drop = list(set(list_old) - set(list_new))
-        # for element in to_be_drop:
-        #     df_old = df_old.drop(df_old.index[df_old['transaction_id'] == element])
+
+        to_be_drop = list(set(list_old) - set(list_new))
+        for element in to_be_drop:
+            print(element)
+            df_old = df_old.drop(df_old.index[df_old['transaction_id'] == element])
 
         df_old.to_csv(csv_filepath, index=False)
         return "Data Submitted"
