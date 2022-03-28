@@ -14,7 +14,7 @@ from dash import html
 from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 # import dash_table
-from dash import dash_table
+from dash import dash_table, callback_context
 from collections import OrderedDict
 
 from utility import build_category_dropdown_dict, build_sub_category_dropdown_dict, row_fillColor_transactions
@@ -597,7 +597,9 @@ def display_table(month, bank):
 def selected_data_to_csv(nclicks, month, bank, table1):
     if nclicks == 0:
         raise PreventUpdate
-    else:
+
+    changed_id = [p['prop_id'] for p in callback_context.triggered][0]
+    if 'month_dropdown' in changed_id or 'bank_dropdown_cat' in changed_id:
         list_new = []
         list_old = []
         df_old = pd.read_csv(csv_filepath)
@@ -609,11 +611,23 @@ def selected_data_to_csv(nclicks, month, bank, table1):
         for a, b in pd.DataFrame(table1).iterrows():
             list_new.append(b.transaction_id)
             df_old.loc[df.transaction_id == b['transaction_id'], 'category'] = b['category']
-            df_old.loc[df.transaction_id == b['transaction_id'], 'sub_category'] = b['sub_category']
-
+            df_old.loc[df.transaction_id == b['transaction_id'], 'sub_category'] = b['sub_category']  
+    
+    elif 'save-button' in changed_id:    
+        list_new = []
+        list_old = []
+        df_old = pd.read_csv(csv_filepath)
+        dff = df_old.copy()
+        dff = dff[dff['booking_date'].str.contains(month)]
+        data = dff[dff['bank'].str.contains(bank)]
+        for c, d in data.iterrows():
+            list_old.append(d.transaction_id)
+        for a, b in pd.DataFrame(table1).iterrows():
+            list_new.append(b.transaction_id)
+            df_old.loc[df_old.transaction_id == b['transaction_id'], 'category'] = b['category']
+            df_old.loc[df_old.transaction_id == b['transaction_id'], 'sub_category'] = b['sub_category']  
         to_be_drop = list(set(list_old) - set(list_new))
         for element in to_be_drop:
-            print(element)
             df_old = df_old.drop(df_old.index[df_old['transaction_id'] == element])
 
         df_old.to_csv(csv_filepath, index=False)
