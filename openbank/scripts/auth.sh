@@ -4,8 +4,8 @@ SECRET_ID=$NORDIGEN_API_ID
 SECRET_KEY=$NORDIGEN_API_KEY
 # bank=UNICREDIT
 country='IT'
-max_historical_days="90"
-access_valid_days="90"
+max_historical_days="7"
+access_valid_days="7"
 redirect_uri="http://localhost"
 need_link=1
 
@@ -58,13 +58,9 @@ source ~/.profile
 # source ~/.profile
 # EOF
 
-
-
 rm -r ../results/tmp
 
 echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
 echo "Auth for $bank is finished!"
 echo "Stay in this terminal for further auth or close it and open a new one for getting data"
 echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-
-
